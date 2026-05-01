@@ -17,7 +17,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.dependencies import lifespan
-from app.routes import health, generate, curl_examples
+from app.routes import health, generate, curl_examples, cost
 from app.config import ALLOWED_ORIGINS
 from app.security import add_security_headers
 
@@ -67,6 +67,7 @@ else:
 app.include_router(health.router)
 app.include_router(generate.router)
 app.include_router(curl_examples.router)
+app.include_router(cost.router)
 
 # ============================================================================
 # CUSTOM EXCEPTION HANDLERS
