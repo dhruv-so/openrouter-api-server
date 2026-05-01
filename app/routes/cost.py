@@ -15,6 +15,7 @@ import logging
 
 import requests
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import PlainTextResponse
 
 from app.config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL, OPENROUTER_TIMEOUT
 from app.dependencies import get_http_session
@@ -61,8 +62,8 @@ def _get(path: str) -> dict:
         raise HTTPException(status_code=500, detail="Invalid upstream response")
 
 
-@router.get("/credits")
-def credits() -> dict:
+@router.get("/credits", response_class=PlainTextResponse)
+def credits() -> PlainTextResponse:
     """Report OpenRouter credit balance + this key's remaining headroom.
 
     Public — no auth required. Surfaces only non-sensitive aggregate
@@ -70,14 +71,7 @@ def credits() -> dict:
     (e.g. "sk-or-v1-ce5...592"); we pass it through verbatim. All numeric
     values are rounded to 3 decimal places.
 
-    Shape:
-      {
-        "account": { "total_credits", "total_usage", "balance" },
-        "key":     { "label", "limit", "limit_remaining", "usage",
-                     "usage_daily", "usage_weekly", "usage_monthly",
-                     "is_free_tier" },
-        "currency": "USD"
-      }
+    Output: plain text, one key=value pair per line.
     """
     credits_data = _get("/credits")
     key_data = _get("/key")
@@ -86,21 +80,22 @@ def credits() -> dict:
     total_usage = credits_data.get("total_usage") or 0
     balance = total_credits - total_usage
 
-    return {
-        "account": {
-            "total_credits": _round3(total_credits),
-            "total_usage": _round3(total_usage),
-            "balance": _round3(balance),
-        },
-        "key": {
-            "label": key_data.get("label"),
-            "limit": _round3(key_data.get("limit")),
-            "limit_remaining": _round3(key_data.get("limit_remaining")),
-            "usage": _round3(key_data.get("usage")),
-            "usage_daily": _round3(key_data.get("usage_daily")),
-            "usage_weekly": _round3(key_data.get("usage_weekly")),
-            "usage_monthly": _round3(key_data.get("usage_monthly")),
-            "is_free_tier": key_data.get("is_free_tier"),
-        },
-        "currency": "USD",
-    }
+    lines = [
+        "[account]",
+        f"total_credits   = {_round3(total_credits)}",
+        f"total_usage     = {_round3(total_usage)}",
+        f"balance         = {_round3(balance)}",
+        "",
+        "[key]",
+        f"label           = {key_data.get('label')}",
+        f"limit           = {_round3(key_data.get('limit'))}",
+        f"limit_remaining = {_round3(key_data.get('limit_remaining'))}",
+        f"usage           = {_round3(key_data.get('usage'))}",
+        f"usage_daily     = {_round3(key_data.get('usage_daily'))}",
+        f"usage_weekly    = {_round3(key_data.get('usage_weekly'))}",
+        f"usage_monthly   = {_round3(key_data.get('usage_monthly'))}",
+        f"is_free_tier    = {key_data.get('is_free_tier')}",
+        "",
+        "currency        = USD",
+    ]
+    return PlainTextResponse("\n".join(lines) + "\n")
