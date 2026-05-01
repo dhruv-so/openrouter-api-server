@@ -56,23 +56,30 @@ REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "15"))
 MODEL_NAME = "gemini-3-flash-preview"
 
 SUPPORTED_MODELS = [
-    "gemini-3-pro-preview",
+    "gemini-3-pro-preview",          # public alias kept for back-compat; routes to 3.1 Pro upstream
+    "gemini-3.1-pro-preview",
     "gemini-3-flash-preview",
+    "gemini-3.1-flash-lite-preview",
 ]
 
 # Per-model thinking levels officially honored by Google. Client may pass any
 # of {minimal, low, medium, high}; if the level isn't in this list for the
-# selected model, OpenRouter remaps to the nearest supported value.
+# selected model, OpenRouter remaps to the nearest supported value upstream.
 THINKING_LEVELS = {
-    "gemini-3-pro-preview": ["low", "high"],
+    "gemini-3-pro-preview": ["low", "medium", "high"],
+    "gemini-3.1-pro-preview": ["low", "medium", "high"],
     "gemini-3-flash-preview": ["minimal", "low", "medium", "high"],
+    "gemini-3.1-flash-lite-preview": ["minimal", "low", "medium", "high"],
 }
 
 # Public model name → OpenRouter slug. Remap happens only at OpenRouter call time
 # so the public API contract (and /health.model) stays unchanged.
+# NOTE: 3.0 Pro retired on OpenRouter; the public name maps to 3.1 Pro upstream.
 MODEL_SLUG_MAP = {
-    "gemini-3-pro-preview": "google/gemini-3-pro-preview",
+    "gemini-3-pro-preview": "google/gemini-3.1-pro-preview",
+    "gemini-3.1-pro-preview": "google/gemini-3.1-pro-preview",
     "gemini-3-flash-preview": "google/gemini-3-flash-preview",
+    "gemini-3.1-flash-lite-preview": "google/gemini-3.1-flash-lite-preview",
 }
 
 # ============================================================================

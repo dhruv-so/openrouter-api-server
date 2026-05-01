@@ -12,7 +12,8 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.config import MODEL_NAME, OPENROUTER_API_KEY
 from app.models import HealthResponse
-from app.dependencies import get_app_start_time, http_session
+from app import dependencies as deps
+from app.dependencies import get_app_start_time
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ def health_check():
         if not OPENROUTER_API_KEY:
             api_status = "degraded"
             logger.warning("OPENROUTER_API_KEY missing")
-        elif http_session is None:
+        elif deps.http_session is None:
             api_status = "degraded"
             logger.warning("HTTP session not initialized")
 

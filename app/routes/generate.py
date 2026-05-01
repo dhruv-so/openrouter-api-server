@@ -137,18 +137,20 @@ async def generate(
                 detail="Upstream model returned empty response (content filtering or safety block)",
             )
 
-        # 8. Parse JSON when schema requested; otherwise leave as string
+        # 8. Parse JSON only when schema requested; otherwise return string verbatim.
         if data.json_schema:
             try:
                 parsed_output = json.loads(content_str)
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse structured JSON output: {e}; content={content_str[:500]}")
                 raise HTTPException(status_code=500, detail="Failed to parse structured response")
+            if not isinstance(parsed_output, (dict, list)):
+                logger.error(
+                    f"Structured response was not a dict/list: type={type(parsed_output).__name__} value={parsed_output!r}"
+                )
+                raise HTTPException(status_code=500, detail="Structured response was not a JSON object/array")
         else:
-            try:
-                parsed_output = json.loads(content_str)
-            except (json.JSONDecodeError, TypeError):
-                parsed_output = content_str
+            parsed_output = content_str
 
         # 9. Token usage
         input_tokens, output_tokens, total_tokens = extract_token_counts(

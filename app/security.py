@@ -181,9 +181,20 @@ async def add_security_headers(request: Request, call_next):
     if request.url.scheme == "https":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     
-    # Content Security Policy
-    response.headers["Content-Security-Policy"] = "default-src 'self'"
-    
+    # Content Security Policy. Docs/curl pages need CDN assets and inline styles
+    # to render Swagger UI / syntax highlighting; other routes stay locked down.
+    docs_paths = ("/docs", "/redoc", "/curl", "/openapi.json")
+    if request.url.path in docs_paths or request.url.path.startswith(("/docs/", "/redoc/")):
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self' https://cdn.jsdelivr.net https://fastapi.tiangolo.com; "
+            "img-src 'self' data: https://cdn.jsdelivr.net https://fastapi.tiangolo.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "font-src 'self' data: https://cdn.jsdelivr.net"
+        )
+    else:
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+
     return response
 
 

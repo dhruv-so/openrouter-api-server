@@ -45,7 +45,11 @@ class GenerateRequest(BaseModel):
     )
     model: str | None = Field(
         None,
-        description="Model name: 'gemini-3-pro-preview' or 'gemini-3-flash-preview' (default: gemini-3-flash-preview)",
+        description=(
+            "Model name. One of: 'gemini-3-pro-preview' (alias → routes to 3.1 Pro), "
+            "'gemini-3.1-pro-preview', 'gemini-3-flash-preview', "
+            "'gemini-3.1-flash-lite-preview'. Default: 'gemini-3-flash-preview'."
+        ),
     )
     thinking_level: str = Field(
         "high",
@@ -74,9 +78,11 @@ class GenerateRequest(BaseModel):
     @classmethod
     def validate_model(cls, v):
         if v is not None:
-            valid_models = ["gemini-3-pro-preview", "gemini-3-flash-preview"]
-            if v not in valid_models:
-                raise ValueError(f"Invalid model. Must be one of: {', '.join(valid_models)}")
+            from app.config import SUPPORTED_MODELS
+            if v not in SUPPORTED_MODELS:
+                raise ValueError(
+                    f"Invalid model. Must be one of: {', '.join(SUPPORTED_MODELS)}"
+                )
         return v
 
 

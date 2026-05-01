@@ -156,22 +156,39 @@ class TestGenerateEndpoint:
         )
         assert mock_openrouter["reasoning"] == {"effort": "medium"}
 
-    def test_thinking_level_medium_for_pro_still_passes_through(
+    def test_thinking_level_minimal_for_pro_logs_warning_but_passes_through(
         self, client, valid_api_key, mock_openrouter, caplog
     ):
-        """Pro doesn't officially support medium; we still forward it (OpenRouter remaps)."""
+        """Pro doesn't support 'minimal'; server forwards anyway (OpenRouter remaps)."""
         with caplog.at_level("WARNING"):
             client.post(
                 "/generate",
                 json={
                     "user_prompt": "hi",
                     "model": "gemini-3-pro-preview",
-                    "thinking_level": "medium",
+                    "thinking_level": "minimal",
                 },
                 headers={"X-API-Key": valid_api_key},
             )
-        assert mock_openrouter["reasoning"] == {"effort": "medium"}
+        assert mock_openrouter["reasoning"] == {"effort": "minimal"}
         assert any("not officially supported" in rec.message for rec in caplog.records)
+
+    def test_pro_public_alias_remaps_to_3_1_pro_slug(self, client, valid_api_key, mock_openrouter):
+        """Public 'gemini-3-pro-preview' is an alias that routes to 3.1 Pro upstream."""
+        client.post(
+            "/generate",
+            json={"user_prompt": "hi", "model": "gemini-3-pro-preview"},
+            headers={"X-API-Key": valid_api_key},
+        )
+        assert mock_openrouter["model"] == "google/gemini-3.1-pro-preview"
+
+    def test_flash_lite_31_slug_passthrough(self, client, valid_api_key, mock_openrouter):
+        client.post(
+            "/generate",
+            json={"user_prompt": "hi", "model": "gemini-3.1-flash-lite-preview"},
+            headers={"X-API-Key": valid_api_key},
+        )
+        assert mock_openrouter["model"] == "google/gemini-3.1-flash-lite-preview"
 
 
 class TestImagePayloadAssembly:
