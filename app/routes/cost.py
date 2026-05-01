@@ -14,15 +14,24 @@ generation traffic.
 import logging
 
 import requests
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from app.config import OPENROUTER_API_KEY, OPENROUTER_BASE_URL, OPENROUTER_TIMEOUT
 from app.dependencies import get_http_session
-from app.security import verify_api_key
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Cost"])
+
+
+def _round3(value):
+    """Round numeric values to 3 decimals. Pass through None."""
+    if value is None:
+        return None
+    try:
+        return round(float(value), 3)
+    except (TypeError, ValueError):
+        return value
 
 
 def _get(path: str) -> dict:
@@ -53,16 +62,20 @@ def _get(path: str) -> dict:
 
 
 @router.get("/credits")
-def credits(api_key: str = Depends(verify_api_key)) -> dict:
+def credits() -> dict:
     """Report OpenRouter credit balance + this key's remaining headroom.
 
-    Auth: requires X-API-Key (same as /generate).
+    Public — no auth required. Surfaces only non-sensitive aggregate
+    USD figures. The key label upstream is already redacted by OpenRouter
+    (e.g. "sk-or-v1-ce5...592"); we pass it through verbatim. All numeric
+    values are rounded to 3 decimal places.
 
-    Returns combined snapshot:
+    Shape:
       {
         "account": { "total_credits", "total_usage", "balance" },
-        "key":     { "limit", "limit_remaining", "usage", "usage_daily",
-                     "usage_weekly", "usage_monthly", "label" },
+        "key":     { "label", "limit", "limit_remaining", "usage",
+                     "usage_daily", "usage_weekly", "usage_monthly",
+                     "is_free_tier" },
         "currency": "USD"
       }
     """
@@ -71,22 +84,22 @@ def credits(api_key: str = Depends(verify_api_key)) -> dict:
 
     total_credits = credits_data.get("total_credits") or 0
     total_usage = credits_data.get("total_usage") or 0
-    balance = round(total_credits - total_usage, 6)
+    balance = total_credits - total_usage
 
     return {
         "account": {
-            "total_credits": total_credits,
-            "total_usage": round(total_usage, 6),
-            "balance": balance,
+            "total_credits": _round3(total_credits),
+            "total_usage": _round3(total_usage),
+            "balance": _round3(balance),
         },
         "key": {
             "label": key_data.get("label"),
-            "limit": key_data.get("limit"),
-            "limit_remaining": key_data.get("limit_remaining"),
-            "usage": key_data.get("usage"),
-            "usage_daily": key_data.get("usage_daily"),
-            "usage_weekly": key_data.get("usage_weekly"),
-            "usage_monthly": key_data.get("usage_monthly"),
+            "limit": _round3(key_data.get("limit")),
+            "limit_remaining": _round3(key_data.get("limit_remaining")),
+            "usage": _round3(key_data.get("usage")),
+            "usage_daily": _round3(key_data.get("usage_daily")),
+            "usage_weekly": _round3(key_data.get("usage_weekly")),
+            "usage_monthly": _round3(key_data.get("usage_monthly")),
             "is_free_tier": key_data.get("is_free_tier"),
         },
         "currency": "USD",
