@@ -37,7 +37,8 @@ app = FastAPI(
     title="Gemini 3.0 Pro API Server",
     version="3.0.0",
     description="API server for Gemini 3.0 Pro with thinking capabilities and flexible prompt/image handling",
-    lifespan=lifespan
+    lifespan=lifespan,
+    redoc_url=None,
 )
 
 # Add rate limiter to app state

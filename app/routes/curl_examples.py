@@ -108,7 +108,7 @@ _PAGE = """<!doctype html>
   <div class="inner">
     <h1>curl quick reference</h1>
     <p class="lede">All examples assume base URL <code id="base">http://localhost:8000</code> and server key <code id="key">YOUR_SERVER_API_KEY</code>.</p>
-    <p class="nav">Also see: <a href="/docs">/docs</a> (Swagger UI) · <a href="/redoc">/redoc</a> · <a href="/health">/health</a> · <a href="/credits">/credits</a></p>
+    <p class="nav">Also see: <a href="/docs">/docs</a> (Swagger UI) · <a href="/health">/health</a> · <a href="/credits">/credits</a></p>
   </div>
 </header>
 <main>
